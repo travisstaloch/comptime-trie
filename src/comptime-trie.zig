@@ -31,7 +31,7 @@ pub fn Options(comptime K: type) type {
     };
 }
 
-pub fn CompTrie(comptime K: type, comptime V: type, options: Options(K)) type {
+pub fn CompTrie(comptime K: type, comptime V: type, comptime options: Options(K)) type {
     return struct {
         root: Node = .{},
         maxdepth: u16 = 0,
@@ -61,7 +61,7 @@ pub fn CompTrie(comptime K: type, comptime V: type, options: Options(K)) type {
 
         /// write all trie keys to writer separated by delimiter
         pub fn writeAllDelim(comptime trie: Trie, writer: anytype, delimiter: []const u8) !void {
-            var it = trie.iterator();
+            comptime var it = trie.iterator();
             var i: usize = 0;
             while (it.next()) |kv| : (i += 1) {
                 if (i != 0) _ = try writer.write(delimiter);
@@ -91,7 +91,7 @@ pub fn CompTrie(comptime K: type, comptime V: type, options: Options(K)) type {
             return struct {
                 itercb: IteratorCallback(maxdepth, ?KV),
                 const Self = @This();
-                pub fn next(self: *Self) ?KV {
+                pub fn next(comptime self: *Self) ?KV {
                     _ = self.itercb.next();
                     return self.itercb.ctx.user_data;
                 }
@@ -134,7 +134,7 @@ pub fn CompTrie(comptime K: type, comptime V: type, options: Options(K)) type {
                     }
                 };
 
-                pub fn next(self: *Self) ?void {
+                pub fn next(comptime self: *Self) ?void {
                     const showdebug = false;
                     while (true) {
                         var item = &self.stack[self.depth];
@@ -329,10 +329,10 @@ pub fn CompTrie(comptime K: type, comptime V: type, options: Options(K)) type {
                 return n.value;
             }
 
-            pub inline fn indexOfScalarPosFn(comptime T: type, slice: []const T, start_index: usize, value: T, orderFn: Options(K).OrderFn) ?usize {
+            pub inline fn indexOfScalarPosFn(comptime T: type, slice: []const T, start_index: usize, value: T, comptime orderFn: Options(K).OrderFn) ?usize {
                 return indexOfScalarPosFnOrder(T, slice, start_index, value, orderFn, .eq);
             }
-            pub inline fn indexOfScalarPosFnOrder(comptime T: type, slice: []const T, start_index: usize, value: T, orderFn: Options(K).OrderFn, order: std.math.Order) ?usize {
+            pub inline fn indexOfScalarPosFnOrder(comptime T: type, slice: []const T, start_index: usize, value: T, comptime orderFn: Options(K).OrderFn, order: std.math.Order) ?usize {
                 var i: usize = start_index;
                 while (i < slice.len) : (i += 1) {
                     if (orderFn({}, slice[i], value) == order) return i;
@@ -409,7 +409,7 @@ test "iterator" {
     const Trie = CompTrie(u8, void, .{});
 
     const trie = comptime Trie.init(testwords2, &[1]void{{}} ** testwords2.len);
-    var iter = trie.iterator();
+    comptime var iter = trie.iterator();
     var i: usize = 0;
     while (iter.next()) |entry| : (i += 1) {
         try t.expectEqualStrings(testwords2[i], entry.key);
@@ -430,7 +430,7 @@ test "many words" {
         break :blk set;
     };
     var it = std.mem.split(u8, words100, "\n");
-    var iter = trie.iterator();
+    comptime var iter = trie.iterator();
     while (it.next()) |w| {
         try t.expect(trie.get(w) != null);
         const entry = iter.next();
